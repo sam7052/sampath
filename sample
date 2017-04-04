@@ -1,0 +1,32 @@
+ name: Installing and configuring httpd server
+  hosts: all
+
+  tasks:
+  - name: Install httpd package
+    apt: name=httpd state=present
+
+  - name: create self-signed SSL cert
+  command: openssl req -new -nodes -x509 -subj "/C=US/ST=STATE/L=CITY/O=IT/CN=${ansible_fqdn}" -keyout /etc/pki/tls/private/server.key -out /etc/pki/tls/certs/server.crt
+
+  - name: Start httpd server
+    service: name=httpd state=running
+
+  - name: install firewalld
+    apt: name=firewalld state=present
+
+  - name: start firewalld and enable it at boot
+    service: name=firewalld enabled=yes state=running
+
+  - name: open up port 80
+    firewalld: port=80/tcp permanent=yes state=enabled
+
+  - name: open up port 443
+    firewalld: port=443/tcp permanent=yes state=enabled
+
+  - name: open up port 22
+    firewalld: port=22/tcp permanent=yes state=enabled
+    notify: firewalld restarted
+
+handlers:
+  - name: firewalld restarted
+    service: name=firewalld state=restarted
